@@ -21,20 +21,72 @@
 /* history */
 /* exported init */
 
+/*
+ * References:
+ *
+ * https://github.com/julio641742/gnome-shell-extension-reference/blob/master/REFERENCE.md
+ * 
+ */
+
 'use strict';
 
 const Main = imports.ui.main;
+const Panel = imports.ui.panel;
+const PanelMenu = imports.ui.panelMenu;
 
+const UdjatIndicator = GObject.registerClass(
+	class UdjatIndicator extends PanelMenu.Button {
+
+		_init() {
+			super._init(0.0, 'text', false);
+	
+			this.icon = new St.Icon();
+			this.icon.set_icon_size(20);
+
+			let gicon = Gio.icon_new_for_string('/srv/www/htdocs/udjat/icons/notimportant.svg');
+			this.icon.set_gicon(gicon);
+	
+			this.box = new St.BoxLayout();
+			this.box.add_child(this.icon);
+	
+			// TODO: This is deprecated.
+			this.actor.add_child(this.box);
+		
+			Main.panel.addToStatusArea('udjat-indicator', this);
+	
+		}
+	
+		destroy() {
+		
+			super.destroy();
+
+		}
+	
+		enable() {
+			this.box.show();
+		}
+	
+		disable() {
+			this.box.hide();
+		}
+	
+	});
+		
 const UdjatNotifierExtension =
 class UdjatNotifierExtension {
 
 	constructor() {
+
+		this.button = new Indicator();
+
 	}
 	
 	enable() {
+		this.button.enable();
 	}
 	
 	disable() {
+		this.button.disable();
 	}
 	
 };
