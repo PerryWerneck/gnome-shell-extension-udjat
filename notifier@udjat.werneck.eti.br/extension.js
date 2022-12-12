@@ -38,6 +38,7 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
 const PanelMenu = imports.ui.panelMenu;
+const Lang = imports.lang;
 
 class UdjatNotifierExtension {
 
@@ -77,11 +78,12 @@ class UdjatNotifierExtension {
         
         // Add an icon
 		this.icon = new St.Icon();
-		this.icon.set_icon_size(20);
+		this.icon.set_icon_size(16);
 		this.icon.set_gicon(this.get_icon("ready-symbolic"));
 		
         this.application.indicator.add_child(this.icon);
 
+        // dbus-monitor --system type=signal interface="br.eti.werneck.udjat.gnome"
         this.application.signal = 
         Gio.DBus.system.signal_subscribe(
             null,									// sender name to match on (unique or well-known name) or null to listen from all senders
@@ -98,8 +100,9 @@ class UdjatNotifierExtension {
 
                 try {
 
-                    log(args);
-
+                    // for (let i in args.get_child_value(0)) log(i);
+                    this.icon.set_gicon(this.get_icon(args.get_child_value(0).deep_unpack()));
+ 
                 } catch(e) {
 
                     log(e);
