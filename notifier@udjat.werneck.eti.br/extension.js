@@ -43,22 +43,22 @@ class UdjatNotifierExtension {
 
     constructor() {
 
-        this.indicator = null;
-
-		this.icons = { 
-        }
+		this.application = {
+            'indicator': null,
+			'signal': null,
+			'icons': { }
+		};
 
 	}
     
     get_icon(name) {
 
-        if(!this.icons.hasOwnProperty(name)) {
+        if(!this.application.icons.hasOwnProperty(name)) {
             log('Loading icon '+ name);
-            //this.icons[name] = Gio.icon_new_for_string('/srv/www/htdocs/udjat/icons/' + name + '.svg');
-            this.icons[name] = Gio.ThemedIcon.new_from_names(['udjat-' + name]);
+            this.application.icons[name] = Gio.ThemedIcon.new_from_names(['udjat-' + name]);
         }
 
-        return this.icons[name];
+        return this.application.icons[name];
     }
 
     enable() {
@@ -73,14 +73,14 @@ class UdjatNotifierExtension {
 		let indicatorName = `${Me.metadata.name} Indicator`;
 
         // Create a panel button
-        this.indicator = new PanelMenu.Button(0.0, indicatorName, false);
+        this.application.indicator = new PanelMenu.Button(0.0, indicatorName, false);
         
         // Add an icon
 		this.icon = new St.Icon();
 		this.icon.set_icon_size(20);
 		this.icon.set_gicon(this.get_icon("ready-symbolic"));
 		
-        this.indicator.add_child(this.icon);
+        this.application.indicator.add_child(this.icon);
 
         this.application.signal = 
         Gio.DBus.system.signal_subscribe(
@@ -110,7 +110,7 @@ class UdjatNotifierExtension {
             })
         );
 
-        this.indicator.show();
+        this.application.indicator.show();
 
         // Bind our indicator visibility to the GSettings value
         //
@@ -118,12 +118,12 @@ class UdjatNotifierExtension {
         // registered on a GObject class), not native JavaScript properties
         //this.settings.bind(
         //    'show-indicator',
-        //    this.indicator,
+        //    this.application.indicator,
         //    'visible',
         //    Gio.SettingsBindFlags.DEFAULT
         //);
 
-        Main.panel.addToStatusArea(indicatorName, this.indicator);
+        Main.panel.addToStatusArea(indicatorName, this.application.indicator);
 
     }
     
@@ -135,8 +135,8 @@ class UdjatNotifierExtension {
 			this.application.signal = null;
 		}		
 
-        this.indicator.destroy();
-        this.indicator = null;
+        this.application.indicator.destroy();
+        this.application.indicator = null;
     }
 }
 
