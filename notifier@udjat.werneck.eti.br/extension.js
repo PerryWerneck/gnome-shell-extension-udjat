@@ -82,6 +82,36 @@ class UdjatNotifierExtension {
 		
         this.indicator.add_child(this.icon);
 
+        this.application.signal = 
+        Gio.DBus.system.signal_subscribe(
+            null,									// sender name to match on (unique or well-known name) or null to listen from all senders
+            'br.eti.werneck.udjat.gnome',			// D-Bus interface name to match on or null to match on all interfaces
+            'GlobalStateChanged',					// D-Bus signal name to match on or null to match on all signals
+            null,                					// object path to match on or null to match on all object paths
+            null,									// contents of first string argument to match on or null to match on all kinds of arguments
+            Gio.DBusSignalFlags.NONE,				// flags describing how to subscribe to the signal (currently unused)
+            Lang.bind(this, function(conn, sender, object_path, interface_name, signal_name, args) {
+        
+                log(object_path);
+                log(interface_name);
+                log(signal_name);
+
+                try {
+
+                    log(args);
+
+                } catch(e) {
+
+                    log(e);
+                    log(e.stack);
+
+                }
+        
+            })
+        );
+
+        this.indicator.show();
+
         // Bind our indicator visibility to the GSettings value
         //
         // NOTE: Binding properties only works with GProperties (properties
@@ -93,13 +123,17 @@ class UdjatNotifierExtension {
         //    Gio.SettingsBindFlags.DEFAULT
         //);
 
-		this.indicator.show();
-
         Main.panel.addToStatusArea(indicatorName, this.indicator);
+
     }
     
     disable() {
         log(`disabling ${Me.metadata.name}`);
+
+		if(this.application.signal) {
+			Gio.DBus.system.signal_unsubscribe(this.application.signal);			
+			this.application.signal = null;
+		}		
 
         this.indicator.destroy();
         this.indicator = null;

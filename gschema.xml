@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<schemalist>
+
+  <schema id="br.eti.werneck.udjat.gnome" path="/br/eti/werneck/udjat/gnome">
+
+    <key name="autohide" type="b">
+      <default>true</default>
+      <summary>Hide when ready</summary>
+      <description>Hide indicator whell all sites are ready</description>
+    </key>
+
+    <key name="show-indicator" type="b">
+      <default>true</default>
+      <summary>Show indicator</summary>
+      <description>Show system bar indicator</description>
+    </key>
+
+    <key name="notify" type="b">
+      <default>false</default>
+      <summary>Notify</summary>
+      <description>Notify on global state change</description>
+    </key>
+
+  </schema>
+
+</schemalist>
