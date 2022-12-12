@@ -25,71 +25,86 @@
  * References:
  *
  * https://github.com/julio641742/gnome-shell-extension-reference/blob/master/REFERENCE.md
+ * https://gjs.guide/extensions/development/preferences.html#integrating-gsettings
  * 
  */
 
 'use strict';
 
+const Gio = imports.gi.Gio;
+const St = imports.gi.St;
+
+const ExtensionUtils = imports.misc.extensionUtils;
+const Me = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
-const Panel = imports.ui.panel;
 const PanelMenu = imports.ui.panelMenu;
 
-const UdjatIndicator = GObject.registerClass(
-	class UdjatIndicator extends PanelMenu.Button {
-
-		_init() {
-			super._init(0.0, 'text', false);
-	
-			this.icon = new St.Icon();
-			this.icon.set_icon_size(20);
-
-			let gicon = Gio.icon_new_for_string('/srv/www/htdocs/udjat/icons/notimportant.svg');
-			this.icon.set_gicon(gicon);
-	
-			this.box = new St.BoxLayout();
-			this.box.add_child(this.icon);
-	
-			// TODO: This is deprecated.
-			this.actor.add_child(this.box);
-		
-			Main.panel.addToStatusArea('udjat-indicator', this);
-	
-		}
-	
-		destroy() {
-		
-			super.destroy();
-
-		}
-	
-		enable() {
-			this.box.show();
-		}
-	
-		disable() {
-			this.box.hide();
-		}
-	
-	});
-		
-const UdjatNotifierExtension =
 class UdjatNotifierExtension {
 
-	constructor() {
+    constructor() {
 
-		this.button = new Indicator();
+        this.indicator = null;
+
+		this.icons = { 
+        }
 
 	}
-	
-	enable() {
-		this.button.enable();
-	}
-	
-	disable() {
-		this.button.disable();
-	}
-	
-};
+    
+    get_icon(name) {
+
+        if(!this.icons.hasOwnProperty(name)) {
+            log('Loading icon '+ name);
+            //this.icons[name] = Gio.icon_new_for_string('/srv/www/htdocs/udjat/icons/' + name + '.svg');
+            this.icons[name] = Gio.ThemedIcon.new_from_names(['udjat-' + name]);
+        }
+
+        return this.icons[name];
+    }
+
+    enable() {
+
+		log('--------------------------------------------------------------------------------');
+
+        log(`enabling ${Me.metadata.name}`);
+
+        //this.settings = ExtensionUtils.getSettings(
+        //   'br.eti.werneck.udjat.gnome');
+
+		let indicatorName = `${Me.metadata.name} Indicator`;
+
+        // Create a panel button
+        this.indicator = new PanelMenu.Button(0.0, indicatorName, false);
+        
+        // Add an icon
+		this.icon = new St.Icon();
+		this.icon.set_icon_size(20);
+		this.icon.set_gicon(this.get_icon("ready-symbolic"));
+		
+        this.indicator.add_child(this.icon);
+
+        // Bind our indicator visibility to the GSettings value
+        //
+        // NOTE: Binding properties only works with GProperties (properties
+        // registered on a GObject class), not native JavaScript properties
+        //this.settings.bind(
+        //    'show-indicator',
+        //    this.indicator,
+        //    'visible',
+        //    Gio.SettingsBindFlags.DEFAULT
+        //);
+
+		this.indicator.show();
+
+        Main.panel.addToStatusArea(indicatorName, this.indicator);
+    }
+    
+    disable() {
+        log(`disabling ${Me.metadata.name}`);
+
+        this.indicator.destroy();
+        this.indicator = null;
+    }
+}
 
 function init() {
 	return new UdjatNotifierExtension();

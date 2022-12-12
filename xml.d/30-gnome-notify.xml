@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<config>
+
+	<module name='dbus' required='no'/>
+
+	<alert name='gnome-notify' type='d-bus' trigger-event='state-change' dbus-bus-type='system' dbus-path='/' dbus-interface='br.eti.werneck.udjat.gnome' dbus-member='GlobalStateChanged'>
+	
+		<argument type='string' value='${state.level}'/>
+		<argument type='string' value='${state.summary}'/>
+			
+	</alert>
+		
+</config>
+
+
