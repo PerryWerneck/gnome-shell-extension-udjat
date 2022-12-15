@@ -236,8 +236,6 @@ class UdjatNotifierExtension {
         let selected = Levels.undefined;
         let icon = null;
 
-        log('--------------------------');
-
         for(let st in this.application.items) {
 
             let state = this.application.items[st]; 
@@ -252,9 +250,10 @@ class UdjatNotifierExtension {
 
         if(icon) {
             this.application.indicator.set_gicon(icon);   
+            this.application.indicator.show();
+        } else {
+            this.application.indicator.hide();
         }
-
-        log('aaaaaaaaaaaaaaaaaaaaaaaaaa');
 
     }
 
@@ -282,6 +281,7 @@ class UdjatNotifierExtension {
 
         // Create a panel button
         this.application.indicator = new Indicator(this);
+        this.application.indicator.hide();
         
         // Watch udjat main service status.
         this.application.signal = 
@@ -329,8 +329,6 @@ class UdjatNotifierExtension {
         
             })
         );
-
-        this.application.indicator.show();
 
         // Bind our indicator visibility to the GSettings value
         //
