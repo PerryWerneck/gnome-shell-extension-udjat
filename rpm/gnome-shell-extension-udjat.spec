@@ -33,32 +33,31 @@ Group:					System/GUI/Other
 License:				LGPL-3.0
 Source:					%{name}-%{version}.tar.xz
 
-URL:					https://github.com/PerryWerneck/udjat-gnome
+URL:					https://github.com/PerryWerneck/gnome-shell-extension-udjat
 
 BuildRoot:				/var/tmp/%{name}-%{version}
 
-Source:					%{name}-%{version}.tar.xz
-
 BuildArch:				noarch
 
-BuildRequires:			gio
-BuildRequires:			gnome-shell >= %{min_gs_version}
-BuildRequires:			unzip
-BuildRequires:			find
 BuildRequires:			fdupes
-BuildRequires:			appstream-glib
 BuildRequires:			pkgconfig(libudjat)
+
+#BuildRequires:			gio
+#BuildRequires:			gnome-shell >= %{min_gs_version}
+#BuildRequires:			unzip
+#BuildRequires:			find
+#BuildRequires:			appstream-glib
 
 # Pre-reqs
 Requires:				gnome-shell >= %{min_gs_version}
 Requires:				gjs
 Requires:				udjat-branding
 
-Requires(post):			desktop-file-utils
-Requires(postun):		desktop-file-utils
+#Requires(post):			desktop-file-utils
+#Requires(postun):		desktop-file-utils
 
-BuildRequires:			scour
-Requires(pre):			dconf
+#BuildRequires:			scour
+#Requires(pre):			dconf
 
 Enhances:				%{product_name}
 
@@ -101,10 +100,15 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 
+%dir %{_datadir}/gnome-shell
+%dir %{_datadir}/gnome-shell/extensions
+
+%dir %{_gsextdir}
 %dir %{_gsextdir}/%{uuid}
-%{_gsextdir}/%{uuid}/extension.js
+
+%{_gsextdir}/%{uuid}/*.js
 %{_gsextdir}/%{uuid}/*.css
-%{_gsextdir}/%{uuid}/metadata.json
+%{_gsextdir}/%{uuid}/*.json
 
 %{_datadir}/glib-2.0/schemas/*.gschema.xml
 
