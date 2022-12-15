@@ -12,6 +12,7 @@ send_signal() {
 		br.eti.werneck.udjat.gnome.StateChanged \
 		string:"${1}" \
 		string:"${2}" \
+		string:"${3}" \
 		string:"udjat-${3}"
 		
 	echo $?

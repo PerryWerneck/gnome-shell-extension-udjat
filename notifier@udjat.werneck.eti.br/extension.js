@@ -40,12 +40,40 @@ const PanelMenu = imports.ui.panelMenu;
 const PopupMenu = imports.ui.popupMenu;
 const Lang = imports.lang;
 
+const Levels = {
+    'undefined': {
+        'value': 0
+    },
+
+    'unimportant': {
+        'value': 1
+    },
+
+    'ready': {
+        'value': 2
+    },
+
+    'warning': {
+        'value': 3
+    },
+
+    'error': {
+        'value': 4
+    },
+
+    'critical': {
+        'value': 5
+    }
+
+};
+
+
 const IndicatorItem = GObject.registerClass(
 	class IndicatorItem extends PopupMenu.PopupBaseMenuItem {
 
         // https://github.com/GNOME/gnome-shell/blob/master/js/ui/popupMenu.js
 
-		_init() {
+		_init(controller, groups) {
 
             super._init({
                 reactive: true,
@@ -53,6 +81,10 @@ const IndicatorItem = GObject.registerClass(
                 hover: false,
                 can_focus: false
             });
+
+            this.controller = controller;
+            this.groups = groups;
+            this.level = Levels.undefined.value;
 
             this.widgets = {
                 'icon': new St.Icon({
@@ -109,13 +141,22 @@ const IndicatorItem = GObject.registerClass(
 
         update(state) {
 
+            this.level = state.level;
+            
             this.widgets.icon.set_gicon(state.icon);
             this.widgets.title.set_text(state.title);
             this.widgets.message.set_text(state.message);
-
-            // state.summary
-            // state.title
         
+            this.controller.refresh();
+
+        }
+
+        get_level() {
+            return this.level;
+        }
+
+        get_gicon() {
+            return this.widgets.icon.get_gicon();
         }
 
     }
@@ -129,6 +170,7 @@ const Indicator = GObject.registerClass(
 		_init(controller) {
 
             this.controller = controller;
+            this.level = Levels.undefined;
 
             let name = `${Me.metadata.name} Indicator`;
 
@@ -141,9 +183,17 @@ const Indicator = GObject.registerClass(
                 'y_expand': false
             });
             this.icon.set_icon_size(16);
-            this.set_icon_name("udjat-ready");
+            this.set_icon_name("udjat-undefined");
             this.add_child(this.icon);
 
+        }
+
+        set_gicon(gicon) {
+            this.icon.set_gicon(gicon);
+        }
+
+        get_gicon() {
+            return this.icon.get_gicon();
         }
 
         set_icon_name(name) {
@@ -160,12 +210,17 @@ class UdjatNotifierExtension {
 		this.application = {
             'indicator': null,
 			'signal': null,
+            'level': Levels.undefined,
 			'icons': { },
-            'states': { }
+            'items': { }
 		};
 
 	}
     
+    get_level() {
+        return this.application.level;
+    }
+
     get_icon(name) {
 
         if(!this.application.icons.hasOwnProperty(name)) {
@@ -176,15 +231,42 @@ class UdjatNotifierExtension {
         return this.application.icons[name];
     }
 
-    get_state(id) {
+    refresh() {
 
-        if(!this.application.states.hasOwnProperty(id)) {
-            log('Creating state ' + id);
-            this.application.states[id] = new IndicatorItem(this);
-            this.application.indicator.menu.addMenuItem(this.application.states[id]);
+        let selected = Levels.undefined;
+        let icon = null;
+
+        log('--------------------------');
+
+        for(let st in this.application.items) {
+
+            let state = this.application.items[st]; 
+            let level = state.get_level();
+            
+            if(level.value >= selected.value) {
+                selected = level;
+                icon = state.get_gicon();
+            }
+
         }
 
-        return this.application.states[id];
+        if(icon) {
+            this.application.indicator.set_gicon(icon);   
+        }
+
+        log('aaaaaaaaaaaaaaaaaaaaaaaaaa');
+
+    }
+
+    get_state(id,groups) {
+
+        if(!this.application.items.hasOwnProperty(id)) {
+            log('Creating state ' + id);
+            this.application.items[id] = new IndicatorItem(this,groups);
+            this.application.indicator.menu.addMenuItem(this.application.items[id]);
+        }
+
+        return this.application.items[id];
         
     }
 
@@ -194,8 +276,7 @@ class UdjatNotifierExtension {
 
         log(`enabling ${Me.metadata.name}`);
 
-        //this.settings = ExtensionUtils.getSettings(
-        //   'br.eti.werneck.udjat.gnome');
+        //this.settings = ExtensionUtils.getSettings('br.eti.werneck.udjat.gnome');
 
 		let indicatorName = `${Me.metadata.name} Indicator`;
 
@@ -219,10 +300,24 @@ class UdjatNotifierExtension {
 
                 try {
 
-                    this.get_state(object_path).update({
+                    let state = args.get_child_value(2).deep_unpack();
+                    let level = Levels.undefined;
+
+                    if(Levels.hasOwnProperty(state)) {
+                        level = Levels[state];
+                        log(`Using state "${state}"`);
+                    } else {
+                        log(`Ignoring unknown state "${state}"`);
+                    }
+
+                    log(`level="${level}"`);
+                    log(`level.value="${level.value}"`);
+
+                    this.get_state(object_path,['d-bus']).update({
                         'title': args.get_child_value(0).deep_unpack(),
                         'message': args.get_child_value(1).deep_unpack(),
-                        'icon': this.get_icon(args.get_child_value(2).deep_unpack())
+                        'icon': this.get_icon(args.get_child_value(3).deep_unpack()),
+                        'level': level
                     })
 
                 } catch(e) {

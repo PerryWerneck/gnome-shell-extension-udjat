@@ -2,5 +2,5 @@
 
 . ./functions
 
-send_signal "Test script" "Generic message" "critical"
+send_signal "Test script" "Critical message" "critical"
 
