@@ -237,12 +237,16 @@ class UdjatNotifierExtension {
         let icon = null;
         let autohide = this.settings.get_boolean('autohide');
 
+        log(`Autohide is ${autohide}`);
+
         for(let st in this.application.items) {
 
             let state = this.application.items[st]; 
             let level = state.get_level();
 
-            if(autohide && level <= Levels.ready.value) {
+            log(`state ${st} has level ${level.value}`);
+
+            if(autohide && level.value <= Levels.ready.value) {
                 continue;
             }
             
