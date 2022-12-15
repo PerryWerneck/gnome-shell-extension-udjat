@@ -54,6 +54,53 @@ const IndicatorItem = GObject.registerClass(
                 can_focus: false
             });
 
+            this.widgets = {
+                'icon': new St.Icon({
+                    'icon_size': 128,
+					'x_expand': false,
+					'y_expand': false
+                }),
+				'title': new St.Label({
+					'text': 'title',
+                    'style_class': 'udjat-item-title',
+					'x_expand': false,
+					'x_align': Clutter.ActorAlign.TOP,
+					'y_expand': true,
+					'y_align': Clutter.ActorAlign.LEFT
+				}),
+				'message': new St.Label({
+					'text': 'message',
+                    'style_class': 'udjat-item-message',
+					'x_expand': false,
+					'x_align': Clutter.ActorAlign.TOP,
+					'y_expand': true,
+					'y_align': Clutter.ActorAlign.LEFT
+				})
+            };
+
+			let hbox = new St.BoxLayout({
+				'vertical': false,
+				'x_expand': true,
+				'y_expand': true,
+                'x_align': Clutter.ActorAlign.TOP,
+                'y_align': Clutter.ActorAlign.LEFT
+			});
+
+			hbox.add_child(this.widgets.icon);
+
+			let vbox = new St.BoxLayout({
+				'vertical': true,
+				'x_expand': true,
+				'y_expand': true,
+                'x_align': Clutter.ActorAlign.TOP,
+                'y_align': Clutter.ActorAlign.LEFT
+			});
+
+			vbox.add_child(this.widgets.title);
+			vbox.add_child(this.widgets.message);
+
+            hbox.add_child(vbox);
+
         }
 
     }
