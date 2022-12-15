@@ -1,0 +1,20 @@
+
+send_signal() {
+
+	echo -e "Title:\t\t${1}"
+	echo -e "Message:\t${2}"
+	echo -e "Icon:\t\t${3}"
+
+	dbus-send \
+		--system \
+		--type=signal \
+		/ \
+		br.eti.werneck.udjat.gnome.StateChanged \
+		string:"${1}" \
+		string:"${2}" \
+		string:"udjat-${3}"
+		
+	echo $?
+
+}
+

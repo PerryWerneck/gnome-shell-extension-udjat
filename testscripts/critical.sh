@@ -1,15 +1,6 @@
 #!/bin/bash
 
-LEVEL="unimportant"
-SUMMARY="Test message"
+. ./functions
 
-dbus-send \
-	--system \
-	--type=signal \
-	/ \
-	br.eti.werneck.udjat.gnome.GlobalStateChanged \
-	string:"${LEVEL}" \
-	string:"${SUMMARY}"
-	
-echo $?
+send_signal "Test script" "Generic message" "critical"
 

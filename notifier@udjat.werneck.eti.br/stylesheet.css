@@ -1,4 +1,12 @@
 
+.udjat-panel-icon {
+    width: 16px;
+}
+
+.udjat-item-icon {
+    margin-right: 10px;
+}
+
 .udjat-item-title {
     font-style: oblique;
     font-weight: lighter;
@@ -6,7 +14,7 @@
 }
 
 .udjat-item-message {
-    font-weight: bolder;
+    font-weight: normal;
     font-size: 110%;
 }
 

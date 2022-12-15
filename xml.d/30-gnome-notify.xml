@@ -6,8 +6,9 @@
 
 	<alert name='gnome-notify' type='d-bus' trigger-event='state-change' dbus-bus-type='system' dbus-path='/' dbus-interface='br.eti.werneck.udjat.gnome' dbus-member='GlobalStateChanged'>
 	
-		<argument type='string' value='${state.level}-symbolic'/>
+		<argument type='string' value='Local system'/>
 		<argument type='string' value='${state.summary}'/>
+		<argument type='string' value='${state.level}'/>
 			
 	</alert>
 		

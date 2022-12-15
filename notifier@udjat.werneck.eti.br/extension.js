@@ -56,7 +56,7 @@ const IndicatorItem = GObject.registerClass(
 
             this.widgets = {
                 'icon': new St.Icon({
-                    'icon_size': 128,
+                    'style_class': 'udjat-item-icon',
 					'x_expand': false,
 					'y_expand': false
                 }),
@@ -64,17 +64,17 @@ const IndicatorItem = GObject.registerClass(
 					'text': 'title',
                     'style_class': 'udjat-item-title',
 					'x_expand': false,
-					'x_align': Clutter.ActorAlign.TOP,
+					'x_align': Clutter.ActorAlign.START,
 					'y_expand': true,
-					'y_align': Clutter.ActorAlign.LEFT
+					'y_align': Clutter.ActorAlign.START
 				}),
 				'message': new St.Label({
 					'text': 'message',
                     'style_class': 'udjat-item-message',
 					'x_expand': false,
-					'x_align': Clutter.ActorAlign.TOP,
+					'x_align': Clutter.ActorAlign.START,
 					'y_expand': true,
-					'y_align': Clutter.ActorAlign.LEFT
+					'y_align': Clutter.ActorAlign.START
 				})
             };
 
@@ -82,9 +82,11 @@ const IndicatorItem = GObject.registerClass(
 				'vertical': false,
 				'x_expand': true,
 				'y_expand': true,
-                'x_align': Clutter.ActorAlign.TOP,
-                'y_align': Clutter.ActorAlign.LEFT
+                'x_align': Clutter.ActorAlign.START,
+                'y_align': Clutter.ActorAlign.START
 			});
+
+            this.widgets.icon.set_icon_size(32);
 
 			hbox.add_child(this.widgets.icon);
 
@@ -92,8 +94,8 @@ const IndicatorItem = GObject.registerClass(
 				'vertical': true,
 				'x_expand': true,
 				'y_expand': true,
-                'x_align': Clutter.ActorAlign.TOP,
-                'y_align': Clutter.ActorAlign.LEFT
+                'x_align': Clutter.ActorAlign.START,
+                'y_align': Clutter.ActorAlign.START
 			});
 
 			vbox.add_child(this.widgets.title);
@@ -101,6 +103,19 @@ const IndicatorItem = GObject.registerClass(
 
             hbox.add_child(vbox);
 
+            this.add_child(hbox);
+
+        }
+
+        update(state) {
+
+            this.widgets.icon.set_gicon(state.icon);
+            this.widgets.title.set_text(state.title);
+            this.widgets.message.set_text(state.message);
+
+            // state.summary
+            // state.title
+        
         }
 
     }
@@ -120,9 +135,13 @@ const Indicator = GObject.registerClass(
             super._init(0.0, name, false);
 
             // Add an icon
-            this.icon = new St.Icon();
+            this.icon = new St.Icon({
+                'style_class': 'udjat-panel-icon',
+                'x_expand': false,
+                'y_expand': false
+            });
             this.icon.set_icon_size(16);
-            this.set_icon_name("ready");
+            this.set_icon_name("udjat-ready");
             this.add_child(this.icon);
 
         }
@@ -130,6 +149,7 @@ const Indicator = GObject.registerClass(
         set_icon_name(name) {
             this.icon.set_gicon(this.controller.get_icon(name));
         }
+
     }
 );
 
@@ -140,21 +160,32 @@ class UdjatNotifierExtension {
 		this.application = {
             'indicator': null,
 			'signal': null,
-			'icons': { }
+			'icons': { },
+            'states': { }
 		};
 
 	}
     
     get_icon(name) {
 
-        name += '-symbolic';
-
         if(!this.application.icons.hasOwnProperty(name)) {
             log('Loading icon '+ name);
-            this.application.icons[name] = Gio.ThemedIcon.new_from_names(['udjat-' + name]);
+            this.application.icons[name] = Gio.ThemedIcon.new_from_names([name]);
         }
 
         return this.application.icons[name];
+    }
+
+    get_state(id) {
+
+        if(!this.application.states.hasOwnProperty(id)) {
+            log('Creating state ' + id);
+            this.application.states[id] = new IndicatorItem(this);
+            this.application.indicator.menu.addMenuItem(this.application.states[id]);
+        }
+
+        return this.application.states[id];
+        
     }
 
     enable() {
@@ -176,7 +207,7 @@ class UdjatNotifierExtension {
         Gio.DBus.system.signal_subscribe(
             null,									// sender name to match on (unique or well-known name) or null to listen from all senders
             'br.eti.werneck.udjat.gnome',			// D-Bus interface name to match on or null to match on all interfaces
-            'GlobalStateChanged',					// D-Bus signal name to match on or null to match on all signals
+            'StateChanged',		        			// D-Bus signal name to match on or null to match on all signals
             null,                					// object path to match on or null to match on all object paths
             null,									// contents of first string argument to match on or null to match on all kinds of arguments
             Gio.DBusSignalFlags.NONE,				// flags describing how to subscribe to the signal (currently unused)
@@ -188,10 +219,12 @@ class UdjatNotifierExtension {
 
                 try {
 
-                    this.application.indicator.set_icon_name(
-                        args.get_child_value(0).deep_unpack()
-                    );
- 
+                    this.get_state(object_path).update({
+                        'title': args.get_child_value(0).deep_unpack(),
+                        'message': args.get_child_value(1).deep_unpack(),
+                        'icon': this.get_icon(args.get_child_value(2).deep_unpack())
+                    })
+
                 } catch(e) {
 
                     log(e);
