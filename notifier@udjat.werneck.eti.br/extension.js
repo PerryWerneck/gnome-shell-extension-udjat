@@ -31,14 +31,60 @@
 
 'use strict';
 
-const Gio = imports.gi.Gio;
-const St = imports.gi.St;
+const { Gio, St, GObject, GLib, Clutter, Soup, Shell } = imports.gi;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
 const PanelMenu = imports.ui.panelMenu;
+const PopupMenu = imports.ui.popupMenu;
 const Lang = imports.lang;
+
+const IndicatorItem = GObject.registerClass(
+	class IndicatorItem extends PopupMenu.PopupBaseMenuItem {
+
+        // https://github.com/GNOME/gnome-shell/blob/master/js/ui/popupMenu.js
+
+		_init() {
+
+            super._init({
+                reactive: true,
+                activate: false,
+                hover: false,
+                can_focus: false
+            });
+
+        }
+
+    }
+);
+
+const Indicator = GObject.registerClass(
+	class Indicator extends PanelMenu.Button {
+
+        // https://github.com/GNOME/gnome-shell/blob/master/js/ui/panelMenu.js
+
+		_init(controller) {
+
+            this.controller = controller;
+
+            let name = `${Me.metadata.name} Indicator`;
+
+            super._init(0.0, name, false);
+
+            // Add an icon
+            this.icon = new St.Icon();
+            this.icon.set_icon_size(16);
+            this.set_icon_name("ready");
+            this.add_child(this.icon);
+
+        }
+
+        set_icon_name(name) {
+            this.icon.set_gicon(this.controller.get_icon(name));
+        }
+    }
+);
 
 class UdjatNotifierExtension {
 
@@ -53,6 +99,8 @@ class UdjatNotifierExtension {
 	}
     
     get_icon(name) {
+
+        name += '-symbolic';
 
         if(!this.application.icons.hasOwnProperty(name)) {
             log('Loading icon '+ name);
@@ -74,16 +122,9 @@ class UdjatNotifierExtension {
 		let indicatorName = `${Me.metadata.name} Indicator`;
 
         // Create a panel button
-        this.application.indicator = new PanelMenu.Button(0.0, indicatorName, false);
+        this.application.indicator = new Indicator(this);
         
-        // Add an icon
-		this.icon = new St.Icon();
-		this.icon.set_icon_size(16);
-		this.icon.set_gicon(this.get_icon("ready-symbolic"));
-		
-        this.application.indicator.add_child(this.icon);
-
-        // dbus-monitor --system type=signal interface="br.eti.werneck.udjat.gnome"
+        // Watch udjat main service status.
         this.application.signal = 
         Gio.DBus.system.signal_subscribe(
             null,									// sender name to match on (unique or well-known name) or null to listen from all senders
@@ -100,8 +141,9 @@ class UdjatNotifierExtension {
 
                 try {
 
-                    // for (let i in args.get_child_value(0)) log(i);
-                    this.icon.set_gicon(this.get_icon(args.get_child_value(0).deep_unpack()));
+                    this.application.indicator.set_icon_name(
+                        args.get_child_value(0).deep_unpack()
+                    );
  
                 } catch(e) {
 
