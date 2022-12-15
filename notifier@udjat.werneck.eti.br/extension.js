@@ -39,31 +39,39 @@ const Main = imports.ui.main;
 const PanelMenu = imports.ui.panelMenu;
 const PopupMenu = imports.ui.popupMenu;
 const Lang = imports.lang;
+const MessageTray = imports.ui.messageTray;
 
 const Levels = {
+
     'undefined': {
-        'value': 0
+        'value': 0,
+        'notify': false
     },
 
     'unimportant': {
-        'value': 1
+        'value': 1,
+        'notify': false
     },
 
     'ready': {
-        'value': 2
+        'value': 2,
+        'notify': false
     },
 
     'warning': {
-        'value': 3
+        'value': 3,
+        'notify': true
     },
 
     'error': {
-        'value': 4
+        'value': 4,
+        'notify': true
     },
 
     'critical': {
-        'value': 5
-    }
+        'value': 5,
+        'notify': true
+    },
 
 };
 
@@ -141,13 +149,45 @@ const IndicatorItem = GObject.registerClass(
 
         update(state) {
 
-            this.level = state.level;
-            
             this.widgets.icon.set_gicon(state.icon);
             this.widgets.title.set_text(state.title);
             this.widgets.message.set_text(state.message);
         
             this.controller.refresh();
+
+            if(this.level.value != state.level.value) {
+
+                this.level = state.level;
+
+                if(this.level.notify) {
+                    this.notify();
+                    return true;
+                }
+
+            }
+
+            return false;
+            
+        }
+
+        notify() {
+            // https://github.com/franglais125/update-extensions/blob/master/extension.js
+            // https://github.com/GNOME/gnome-shell/blob/master/js/ui/messageTray.js
+            let source = new MessageTray.Source(
+                this.widgets.message.get_text(),
+                this.widgets.icon.get_gicon().to_string()
+            );
+
+            let notification = 
+                new MessageTray.Notification(
+                    source, 
+                    this.widgets.title.get_text(), 
+                    this.widgets.message.get_text()
+                );
+
+            Main.messageTray.add(source);
+            notification.setTransient(true);
+            source.notify(notification);
 
         }
 
@@ -221,6 +261,12 @@ class UdjatNotifierExtension {
         return this.application.level;
     }
 
+    get_level_from_name(lvl) {
+        if(Levels.hasOwnProperty(lvl))
+            return Levels[lvl];
+        return Levels.undefined;
+    }
+
     get_icon(name) {
 
         if(!this.application.icons.hasOwnProperty(name)) {
@@ -292,7 +338,7 @@ class UdjatNotifierExtension {
         this.application.indicator = new Indicator(this);
         this.application.indicator.hide();
         
-        // Watch udjat main service status.
+        // Watch signals.
         this.application.signal = 
         Gio.DBus.system.signal_subscribe(
             null,									// sender name to match on (unique or well-known name) or null to listen from all senders
@@ -301,30 +347,21 @@ class UdjatNotifierExtension {
             null,                					// object path to match on or null to match on all object paths
             null,									// contents of first string argument to match on or null to match on all kinds of arguments
             Gio.DBusSignalFlags.NONE,				// flags describing how to subscribe to the signal (currently unused)
-            Lang.bind(this, function(conn, sender, object_path, interface_name, signal_name, args) {
+            Lang.bind(this, function(conn, sender, object_path, interface_name, signal_name, variant) {
         
                 try {
 
-                    let arglist = [];
-                    for(let ix = 0; ix < args.n_children(); ix++) {
-                        arglist.push(args.get_child_value(ix).deep_unpack());
+                    let args = [];
+                    for(let ix = 0; ix < variant.n_children(); ix++) {
+                        args.push(variant.get_child_value(ix).deep_unpack());
                     }
 
-                    let level = Levels.undefined;
-
-                    if(Levels.hasOwnProperty(arglist[2])) {
-                        level = Levels[arglist[2]];
-                        log(`Using state "${arglist[2]}"`);
-                    } else {
-                        log(`Ignoring unknown state "${arglist[2]}"`);
-                    }
-
-                    if(signal_name == 'StateChanged' && arglist.length > 3) {
+                    if(signal_name == 'StateChanged' && args.length > 3) {
                         this.get_state(object_path,['d-bus']).update({
-                            'title': arglist[0],
-                            'message': arglist[1],
-                            'icon': this.get_icon(arglist[3]),
-                            'level': level
+                            'title': args[0],
+                            'message': args[1],
+                            'icon': this.get_icon(args[3]),
+                            'level': this.get_level_from_name(args[2])
                         });
                     } else {
                         log(`Unexpected or invalid signal "${signal_name}"`);

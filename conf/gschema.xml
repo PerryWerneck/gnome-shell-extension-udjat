@@ -10,6 +10,12 @@
       <description>Hide indicator when all states are ok</description>
     </key>
 
+    <key name="notify" type="b">
+      <default>true</default>
+      <summary>Notify</summary>
+      <description>Notify on state level change</description>
+    </key>
+
     <!--
     <key name="notify" type="b">
       <default>false</default>
