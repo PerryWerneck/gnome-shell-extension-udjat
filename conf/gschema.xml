@@ -11,12 +11,6 @@
     </key>
 
     <!--
-    <key name="show-indicator" type="b">
-      <default>true</default>
-      <summary>Show indicator</summary>
-      <description>Show system bar indicator</description>
-    </key>
-
     <key name="notify" type="b">
       <default>false</default>
       <summary>Notify</summary>

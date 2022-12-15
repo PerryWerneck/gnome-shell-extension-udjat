@@ -297,37 +297,38 @@ class UdjatNotifierExtension {
         Gio.DBus.system.signal_subscribe(
             null,									// sender name to match on (unique or well-known name) or null to listen from all senders
             'br.eti.werneck.udjat.gnome',			// D-Bus interface name to match on or null to match on all interfaces
-            'StateChanged',		        			// D-Bus signal name to match on or null to match on all signals
+            null,       		        			// D-Bus signal name to match on or null to match on all signals
             null,                					// object path to match on or null to match on all object paths
             null,									// contents of first string argument to match on or null to match on all kinds of arguments
             Gio.DBusSignalFlags.NONE,				// flags describing how to subscribe to the signal (currently unused)
             Lang.bind(this, function(conn, sender, object_path, interface_name, signal_name, args) {
         
-                log(object_path);
-                log(interface_name);
-                log(signal_name);
-
                 try {
 
-                    let state = args.get_child_value(2).deep_unpack();
-                    let level = Levels.undefined;
-
-                    if(Levels.hasOwnProperty(state)) {
-                        level = Levels[state];
-                        log(`Using state "${state}"`);
-                    } else {
-                        log(`Ignoring unknown state "${state}"`);
+                    let arglist = [];
+                    for(let ix = 0; ix < args.n_children(); ix++) {
+                        arglist.push(args.get_child_value(ix).deep_unpack());
                     }
 
-                    log(`level="${level}"`);
-                    log(`level.value="${level.value}"`);
+                    let level = Levels.undefined;
 
-                    this.get_state(object_path,['d-bus']).update({
-                        'title': args.get_child_value(0).deep_unpack(),
-                        'message': args.get_child_value(1).deep_unpack(),
-                        'icon': this.get_icon(args.get_child_value(3).deep_unpack()),
-                        'level': level
-                    })
+                    if(Levels.hasOwnProperty(arglist[2])) {
+                        level = Levels[arglist[2]];
+                        log(`Using state "${arglist[2]}"`);
+                    } else {
+                        log(`Ignoring unknown state "${arglist[2]}"`);
+                    }
+
+                    if(signal_name == 'StateChanged' && arglist.length > 3) {
+                        this.get_state(object_path,['d-bus']).update({
+                            'title': arglist[0],
+                            'message': arglist[1],
+                            'icon': this.get_icon(arglist[3]),
+                            'level': level
+                        });
+                    } else {
+                        log(`Unexpected or invalid signal "${signal_name}"`);
+                    }
 
                 } catch(e) {
 

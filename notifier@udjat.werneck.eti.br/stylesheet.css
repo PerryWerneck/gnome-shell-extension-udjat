@@ -4,16 +4,18 @@
 }
 
 .udjat-item-icon {
-    margin-right: 10px;
+    margin: 0px;
 }
 
 .udjat-item-title {
+    margin-left: 5px;
     font-style: oblique;
     font-weight: lighter;
     font-size: 90%;
 }
 
 .udjat-item-message {
+    margin-left: 5px;
     font-weight: normal;
     font-size: 110%;
 }
