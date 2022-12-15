@@ -67,11 +67,11 @@ const Levels = {
 
 };
 
-
 const IndicatorItem = GObject.registerClass(
 	class IndicatorItem extends PopupMenu.PopupBaseMenuItem {
 
         // https://github.com/GNOME/gnome-shell/blob/master/js/ui/popupMenu.js
+        // https://www.roojs.com/seed/gir-1.2-gtk-3.0/seed/St.BoxLayout.html
 
 		_init(controller, groups) {
 
@@ -235,11 +235,16 @@ class UdjatNotifierExtension {
 
         let selected = Levels.undefined;
         let icon = null;
+        let autohide = this.settings.get_boolean('autohide');
 
         for(let st in this.application.items) {
 
             let state = this.application.items[st]; 
             let level = state.get_level();
+
+            if(autohide && level <= Levels.ready.value) {
+                continue;
+            }
             
             if(level.value >= selected.value) {
                 selected = level;
@@ -275,7 +280,7 @@ class UdjatNotifierExtension {
 
         log(`enabling ${Me.metadata.name}`);
 
-        //this.settings = ExtensionUtils.getSettings('br.eti.werneck.udjat.gnome');
+        this.settings = ExtensionUtils.getSettings('br.eti.werneck.udjat.gnome');
 
 		let indicatorName = `${Me.metadata.name} Indicator`;
 

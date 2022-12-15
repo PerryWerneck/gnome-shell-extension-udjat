@@ -9,3 +9,6 @@ ln -sf $(readlink -f "${EXTENSION_ID}") "${EXTENSION_FOLDER}"
 
 ls -l ${EXTENSION_FOLDER}/
 
+sudo ln -sf $(readlink -f conf/gschema.xml) /usr/share/glib-2.0/schemas/br.eti.werneck.udjat.gnome.gschema.xml
+sudo glib-compile-schemas /usr/share/glib-2.0/schemas
+

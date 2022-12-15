@@ -2,14 +2,15 @@
 
 <schemalist>
 
-  <schema id="br.eti.werneck.udjat.gnome" path="/br/eti/werneck/udjat/gnome">
+  <schema id="br.eti.werneck.udjat.gnome" path="/br/eti/werneck/udjat/gnome/">
 
     <key name="autohide" type="b">
       <default>true</default>
       <summary>Hide when ready</summary>
-      <description>Hide indicator whell all sites are ready</description>
+      <description>Hide indicator when all states are ok</description>
     </key>
 
+    <!--
     <key name="show-indicator" type="b">
       <default>true</default>
       <summary>Show indicator</summary>
@@ -22,12 +23,12 @@
       <description>Notify on global state change</description>
     </key>
 
-
     <key name="symbolic" type="b">
       <default>true</default>
       <summary>Use symbolic items</summary>
       <description>Use symbolic icons instead of regular ones</description>
     </key>
+    -->
 
   </schema>
 
