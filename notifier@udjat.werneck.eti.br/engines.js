@@ -155,6 +155,14 @@ var Udjat = class extends Engine {
 		super(controller,config,'udjat');
 	}
 
+	on_json_response(response) {
+		this.set_response({
+			'title': this.title,
+			'message': response.state.summary,
+			'level': response.state.level
+		});
+	}
+
 }
 
 /// @brief URL to old 'mentor' api.
