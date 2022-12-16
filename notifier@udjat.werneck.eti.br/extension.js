@@ -250,7 +250,9 @@ class UdjatNotifierExtension {
 
     constructor() {
 
-		this.application = {
+        this.settings = ExtensionUtils.getSettings('br.eti.werneck.udjat.gnome');
+
+        this.application = {
             'indicator': null,
 			'signal': null,
             'level': Levels.undefined,
@@ -260,11 +262,10 @@ class UdjatNotifierExtension {
             'timer': null
 		};
 
-        let filename = Me.path + '/settings.json';
-        let file = Gio.file_new_for_path(filename);
+        let file = this.get_settings_file();
 
         if (file.query_exists(null)) {
-            log(`Loading settings from ${filename}`);
+
             let controller = this;
             file.load_contents_async(null, function(obj, res) {
 
@@ -273,20 +274,48 @@ class UdjatNotifierExtension {
 
                     contents = JSON.parse(imports.byteArray.toString(contents));
                     for(let ix in contents) {
-                        let engine = contents[ix].engine.charAt(0).toUpperCase() + contents[ix].engine.slice(1);
-                        controller.application.loaders.push(new Engines[engine](controller,contents[ix]));
+
+                        try {
+
+                            if(!contents[ix].hasOwnProperty('url')) {
+                                log('Ignoring setting withou URL');
+                                continue;
+                            }
+  
+                            if(!contents[ix].hasOwnProperty('engine')) {
+                                contents[ix].engine = 'Udjat';
+                            }
+
+                            let engine = contents[ix].engine.charAt(0).toUpperCase() + contents[ix].engine.slice(1);
+                            controller.application.loaders.push(new Engines[engine](controller,contents[ix]));
+                        
+                        } catch(e) {
+
+                            log(e);
+                            log(e.stack);
+                        
+                        }
                     }
 
                 } else {
                     log(`Error loading ${filename}`);
                 }
             });
-        } else {
-            log(`Settings file ${filename} is not available`);
         }
 
 	}
     
+    get_settings_file() {
+
+        // https://gjs.guide/guides/gtk/3/15-saving-data.html#saving-data-to-a-file
+
+        let filename = GLib.build_filenamev([GLib.get_user_config_dir(), 'udjat', 'gnome-shell-extension.json']);
+        let file = Gio.file_new_for_path(filename);
+        GLib.mkdir_with_parents(file.get_parent().get_path(),0o755);
+        return file;
+        
+    }
+
     get_level() {
         return this.application.level;
     }
@@ -314,8 +343,6 @@ class UdjatNotifierExtension {
         let icon = null;
         let autohide = this.settings.get_boolean('autohide');
 
-        log(`Autohide is ${autohide}`);
-
         for(let st in this.application.items) {
 
             let state = this.application.items[st]; 
@@ -339,7 +366,6 @@ class UdjatNotifierExtension {
         log(`Current level is ${selected.value}`);
 
         if(icon) {
-            log(`Setting icon to ${icon}`);
             this.application.indicator.set_gicon(icon);   
             this.application.indicator.show();
         } else {
@@ -363,10 +389,6 @@ class UdjatNotifierExtension {
 
     set_response(url,group,args) {
 
-        log('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz');
-        log(args.level);
-        log(this.get_level_from_name(args.level));
-
         this.get_state(url,[group]).update({
             'title': args.title,
             'message': args.message,
@@ -379,8 +401,6 @@ class UdjatNotifierExtension {
     enable() {
 
         log(`enabling ${Me.metadata.name}`);
-
-        this.settings = ExtensionUtils.getSettings('br.eti.werneck.udjat.gnome');
 
 		let indicatorName = `${Me.metadata.name} Indicator`;
 
