@@ -33,13 +33,17 @@
 
 const { Gio, St, GObject, GLib, Clutter, Soup, Shell } = imports.gi;
 
+// https://gitlab.gnome.org/GNOME/gnome-shell/blob/main/js/misc/extensionUtils.js
 const ExtensionUtils = imports.misc.extensionUtils;
+
 const Me = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
 const PanelMenu = imports.ui.panelMenu;
 const PopupMenu = imports.ui.popupMenu;
 const Lang = imports.lang;
 const MessageTray = imports.ui.messageTray;
+
+const Engines = Me.imports.engines;
 
 const Levels = {
 
@@ -153,13 +157,12 @@ const IndicatorItem = GObject.registerClass(
             this.widgets.title.set_text(state.title);
             this.widgets.message.set_text(state.message);
         
-            this.controller.refresh();
-
             if(this.level.value != state.level.value) {
 
                 this.level = state.level;
 
                 if(this.level.notify) {
+                    this.controller.refresh();
                     this.notify();
                     return true;
                 }
@@ -252,8 +255,33 @@ class UdjatNotifierExtension {
 			'signal': null,
             'level': Levels.undefined,
 			'icons': { },
-            'items': { }
+            'items': { },
+            'loaders': [ ]
 		};
+
+        let filename = Me.path + '/settings.json';
+        let file = Gio.file_new_for_path(filename);
+
+        if (file.query_exists(null)) {
+            log(`Loading settings from ${filename}`);
+            let app = this.application;
+            file.load_contents_async(null, function(obj, res) {
+
+                let [success, contents] = obj.load_contents_finish(res);
+                if(success) {
+
+                    contents = JSON.parse(imports.byteArray.toString(contents));
+                    for(let ix in contents) {
+                        app.loaders.push(new Engines[contents[ix].engine](contents[ix]));
+                    }
+
+                } else {
+                    log(`Error loading ${filename}`);
+                }
+            });
+        } else {
+            log(`Settings file ${filename} is not available`);
+        }
 
 	}
     
@@ -290,23 +318,29 @@ class UdjatNotifierExtension {
             let state = this.application.items[st]; 
             let level = state.get_level();
 
-            log(`state ${st} has level ${level.value}`);
-
             if(autohide && level.value <= Levels.ready.value) {
+                log(`Ignoring state ${st} with level ${level.value}`);
                 continue;
             }
             
             if(level.value >= selected.value) {
                 selected = level;
                 icon = state.get_gicon();
+                log(`Selecting state ${st} with level ${level.value}`);
+            } else {
+                log(`State ${st} has level ${level.value} lower than selected ${selected.value}`);
             }
 
         }
 
+        log(`Current level is ${selected.value}`);
+
         if(icon) {
+            log(`Setting icon to ${icon}`);
             this.application.indicator.set_gicon(icon);   
             this.application.indicator.show();
         } else {
+            log("No icon, disabling");
             this.application.indicator.hide();
         }
 
@@ -324,9 +358,18 @@ class UdjatNotifierExtension {
         
     }
 
-    enable() {
+    set_response(url,group,args) {
 
-		log('--------------------------------------------------------------------------------');
+        this.get_state(url,[group]).update({
+            'title': args.title,
+            'message': args.message,
+            'icon': this.get_icon(args.level),
+            'level': this.get_level_from_name(args.level)
+        });
+
+    }
+
+    enable() {
 
         log(`enabling ${Me.metadata.name}`);
 
