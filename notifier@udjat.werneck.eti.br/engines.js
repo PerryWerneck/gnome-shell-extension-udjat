@@ -26,16 +26,22 @@ const Lang = imports.lang;
 /// @brief Abstract engine.
 var Engine = class {
 
-	constructor(config,group) {
+	constructor(controller,config,group) {
 		
-		this.controller = null;
+		this.controller = controller;
 		this.url = config.url;
 		this.title = config.title;
-		this.timer = 5;
 		this.next = 0;
+		this._enabled = true;
+
+		if(config.hasOwnProperty('timer')) {
+			this.timer = config.timer;
+		} else {
+			this.timer = 5;
+		}
 
 		if(config.hasOwnProperty('group')) {
-			this.group = config.group
+			this.group = config.group;
 		} else {
 			this.group = group;
 		}
@@ -44,15 +50,15 @@ var Engine = class {
 	}
 
 	enabled() {
-		return this.controller != null;
+		return this._enabled && this.controller != null;
 	}
 
-	enable(controller) {
-		this.controller = controller;
+	enable() {
+		this._enabled = true;
 	}
 
 	disable() {
-		this.controller = null;
+		this._enabled = false;
 	}
 
 	on_http_response(response) {
@@ -103,10 +109,9 @@ var Engine = class {
 					} else {
 
 						log(`Got http error ${message.status_code} from ${object.url}`);
-						this.group = 'engine';
 						object.set_response({
 							'title': object.title,
-							'message': 'Invalid or incomplete engine',
+							'message': `HTTP error ${message.status_code}`,
 							'level': 'error'
 						});
 					}
@@ -146,8 +151,8 @@ var Engine = class {
 /// @brief Standard Udjat agent status
 var Udjat = class extends Engine {
 
-	constructor(config) {
-		super(config,'udjat');
+	constructor(controller,config) {
+		super(controller,config,'udjat');
 	}
 
 }
@@ -155,8 +160,8 @@ var Udjat = class extends Engine {
 /// @brief URL to old 'mentor' api.
 var Mentor = class extends Engine {
 
-	constructor(config) {
-		super(config,'mentor');
+	constructor(controller,config) {
+		super(controller,config,'mentor');
 	}
 
 }

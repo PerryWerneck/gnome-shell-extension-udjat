@@ -265,7 +265,7 @@ class UdjatNotifierExtension {
 
         if (file.query_exists(null)) {
             log(`Loading settings from ${filename}`);
-            let app = this.application;
+            let controller = this;
             file.load_contents_async(null, function(obj, res) {
 
                 let [success, contents] = obj.load_contents_finish(res);
@@ -273,7 +273,8 @@ class UdjatNotifierExtension {
 
                     contents = JSON.parse(imports.byteArray.toString(contents));
                     for(let ix in contents) {
-                        app.loaders.push(new Engines[contents[ix].engine](contents[ix]));
+                        let engine = contents[ix].engine.charAt(0).toUpperCase() + contents[ix].engine.slice(1);
+                        controller.application.loaders.push(new Engines[engine](controller,contents[ix]));
                     }
 
                 } else {
@@ -396,8 +397,7 @@ class UdjatNotifierExtension {
                 let timestamp = Math.floor(new Date().getTime() / 1000);
                 for(let ld in this.application.loaders) {
                     let loader = this.application.loaders[ld];
-                    if(timestamp >= loader.next) {
-                        loader.enable(this);
+                    if(loader.enabled() && timestamp >= loader.next) {
                         loader.refresh();
                     }
                 }
