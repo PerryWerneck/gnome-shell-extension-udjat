@@ -256,7 +256,8 @@ class UdjatNotifierExtension {
             'level': Levels.undefined,
 			'icons': { },
             'items': { },
-            'loaders': [ ]
+            'loaders': [ ],
+            'timer': null
 		};
 
         let filename = Me.path + '/settings.json';
@@ -298,10 +299,11 @@ class UdjatNotifierExtension {
     get_icon(name) {
 
         if(!this.application.icons.hasOwnProperty(name)) {
-            log('Loading icon '+ name);
+            log('Loading icon ' + name);
             this.application.icons[name] = Gio.ThemedIcon.new_from_names([name]);
         }
 
+        log('Using cached icon ' + name)
         return this.application.icons[name];
     }
 
@@ -360,10 +362,14 @@ class UdjatNotifierExtension {
 
     set_response(url,group,args) {
 
+        log('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz');
+        log(args.level);
+        log(this.get_level_from_name(args.level));
+
         this.get_state(url,[group]).update({
             'title': args.title,
             'message': args.message,
-            'icon': this.get_icon(args.level),
+            'icon': this.get_icon('udjat-' + args.level),
             'level': this.get_level_from_name(args.level)
         });
 
@@ -380,6 +386,26 @@ class UdjatNotifierExtension {
         // Create a panel button
         this.application.indicator = new Indicator(this);
         this.application.indicator.hide();
+
+        // Activate timer
+		this.application.timer = GLib.timeout_add(
+			GLib.PRIORITY_DEFAULT,
+			1000,
+			Lang.bind(this, function() {
+
+                let timestamp = Math.floor(new Date().getTime() / 1000);
+                for(let ld in this.application.loaders) {
+                    let loader = this.application.loaders[ld];
+                    if(timestamp >= loader.next) {
+                        loader.enable(this);
+                        loader.refresh();
+                    }
+                }
+
+                return true;
+
+            })
+        );
         
         // Watch signals.
         this.application.signal = 
@@ -438,7 +464,16 @@ class UdjatNotifierExtension {
     disable() {
         log(`disabling ${Me.metadata.name}`);
 
-		if(this.application.signal) {
+		if(this.application.timer) {
+			GLib.source_remove(this.application.timer);
+			this.application.timer = null;
+		}
+
+        for(let loader in this.application.loaders) {
+           this.application.loaders[ld].disable();
+        }
+
+        if(this.application.signal) {
 			Gio.DBus.system.signal_unsubscribe(this.application.signal);			
 			this.application.signal = null;
 		}		

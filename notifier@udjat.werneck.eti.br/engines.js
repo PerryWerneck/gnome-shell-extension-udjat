@@ -21,6 +21,7 @@
 /* history */
 
 const { Soup } = imports.gi;
+const Lang = imports.lang;
 
 /// @brief Abstract engine.
 var Engine = class {
@@ -30,6 +31,8 @@ var Engine = class {
 		this.controller = null;
 		this.url = config.url;
 		this.title = config.title;
+		this.timer = 5;
+		this.next = 0;
 
 		if(config.hasOwnProperty('group')) {
 			this.group = config.group
@@ -59,7 +62,7 @@ var Engine = class {
 	on_json_response(response) {
 		this.set_response({
 			'title': this.title,
-			'message': 'Invalid or incomplete engine',
+			'message': 'The selected engine is invalid',
 			'level': 'error'
 		});
 	}
@@ -71,6 +74,8 @@ var Engine = class {
 	}
 
 	refresh() {
+
+		this.next = Math.floor(new Date().getTime() / 1000) + (this.timer * 60);
 
 		try {
 
@@ -123,10 +128,10 @@ var Engine = class {
 
 		} catch(e) {
 					
-			this.log(e);
-			this.log(e.stack);
+			log(e);
+			log(e.stack);
 
-			object.set_response({
+			this.set_response({
 				'title': object.title,
 				'message': e.message,
 				'level': 'error'

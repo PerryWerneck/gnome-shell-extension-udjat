@@ -16,6 +16,12 @@
       <description>Notify on state level change</description>
     </key>
 
+    <key name="timer" type="u">
+      <default>1</default>
+      <summary>Timer interval (in minutes)</summary>
+      <description>Value for remote update timers</description>
+    </key>
+
     <!--
     <key name="notify" type="b">
       <default>false</default>
